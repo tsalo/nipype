@@ -29,13 +29,12 @@ import sys
 import types
 
 __author__ = "Benjamin Peterson <benjamin@python.org>"
-__version__ = "1.10.0"
+__version__ = "1.9.0"
 
 
 # Useful for very coarse version differentiation.
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
-PY34 = sys.version_info[0:2] >= (3, 4)
 
 if PY3:
     string_types = str,
@@ -58,7 +57,6 @@ else:
     else:
         # It's possible to have sizeof(long) != sizeof(Py_ssize_t).
         class X(object):
-
             def __len__(self):
                 return 1 << 31
         try:
@@ -162,7 +160,6 @@ class MovedAttribute(_LazyDescr):
 
 
 class _SixMetaPathImporter(object):
-
     """
     A meta path importer to import six.moves and its submodules.
 
@@ -227,7 +224,6 @@ _importer = _SixMetaPathImporter(__name__)
 
 
 class _MovedItems(_LazyModule):
-
     """Lazy loading of moved objects"""
     __path__ = []  # mark as package
 
@@ -239,10 +235,8 @@ _moved_attributes = [
     MovedAttribute("input", "__builtin__", "builtins", "raw_input", "input"),
     MovedAttribute("intern", "__builtin__", "sys"),
     MovedAttribute("map", "itertools", "builtins", "imap", "map"),
-    MovedAttribute("getcwd", "os", "os", "getcwdu", "getcwd"),
-    MovedAttribute("getcwdb", "os", "os", "getcwd", "getcwdb"),
     MovedAttribute("range", "__builtin__", "builtins", "xrange", "range"),
-    MovedAttribute("reload_module", "__builtin__", "importlib" if PY34 else "imp", "reload"),
+    MovedAttribute("reload_module", "__builtin__", "imp", "reload"),
     MovedAttribute("reduce", "__builtin__", "functools"),
     MovedAttribute("shlex_quote", "pipes", "shlex", "quote"),
     MovedAttribute("StringIO", "StringIO", "io"),
@@ -252,6 +246,7 @@ _moved_attributes = [
     MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
     MovedAttribute("zip", "itertools", "builtins", "izip", "zip"),
     MovedAttribute("zip_longest", "itertools", "itertools", "izip_longest", "zip_longest"),
+
     MovedModule("builtins", "__builtin__"),
     MovedModule("configparser", "ConfigParser"),
     MovedModule("copyreg", "copy_reg"),
@@ -298,13 +293,8 @@ _moved_attributes = [
     MovedModule("urllib_robotparser", "robotparser", "urllib.robotparser"),
     MovedModule("xmlrpc_client", "xmlrpclib", "xmlrpc.client"),
     MovedModule("xmlrpc_server", "SimpleXMLRPCServer", "xmlrpc.server"),
+    MovedModule("winreg", "_winreg"),
 ]
-# Add windows specific modules.
-if sys.platform == "win32":
-    _moved_attributes += [
-        MovedModule("winreg", "_winreg"),
-    ]
-
 for attr in _moved_attributes:
     setattr(_MovedItems, attr.name, attr)
     if isinstance(attr, MovedModule):
@@ -318,7 +308,6 @@ _importer._add_module(moves, "moves")
 
 
 class Module_six_moves_urllib_parse(_LazyModule):
-
     """Lazy loading of moved objects in six.moves.urllib_parse"""
 
 
@@ -358,7 +347,6 @@ _importer._add_module(Module_six_moves_urllib_parse(__name__ + ".moves.urllib_pa
 
 
 class Module_six_moves_urllib_error(_LazyModule):
-
     """Lazy loading of moved objects in six.moves.urllib_error"""
 
 
@@ -378,7 +366,6 @@ _importer._add_module(Module_six_moves_urllib_error(__name__ + ".moves.urllib.er
 
 
 class Module_six_moves_urllib_request(_LazyModule):
-
     """Lazy loading of moved objects in six.moves.urllib_request"""
 
 
@@ -428,7 +415,6 @@ _importer._add_module(Module_six_moves_urllib_request(__name__ + ".moves.urllib.
 
 
 class Module_six_moves_urllib_response(_LazyModule):
-
     """Lazy loading of moved objects in six.moves.urllib_response"""
 
 
@@ -449,7 +435,6 @@ _importer._add_module(Module_six_moves_urllib_response(__name__ + ".moves.urllib
 
 
 class Module_six_moves_urllib_robotparser(_LazyModule):
-
     """Lazy loading of moved objects in six.moves.urllib_robotparser"""
 
 
@@ -467,7 +452,6 @@ _importer._add_module(Module_six_moves_urllib_robotparser(__name__ + ".moves.url
 
 
 class Module_six_moves_urllib(types.ModuleType):
-
     """Create a six.moves.urllib namespace that resembles the Python 3 namespace"""
     __path__ = []  # mark as package
     parse = _importer._get_module("moves.urllib_parse")
@@ -538,9 +522,6 @@ if PY3:
 
     create_bound_method = types.MethodType
 
-    def create_unbound_method(func, cls):
-        return func
-
     Iterator = object
 else:
     def get_unbound_function(unbound):
@@ -548,9 +529,6 @@ else:
 
     def create_bound_method(func, obj):
         return types.MethodType(func, obj, obj.__class__)
-
-    def create_unbound_method(func, cls):
-        return types.MethodType(func, None, cls)
 
     class Iterator(object):
 
@@ -590,16 +568,16 @@ if PY3:
     viewitems = operator.methodcaller("items")
 else:
     def iterkeys(d, **kw):
-        return d.iterkeys(**kw)
+        return iter(d.iterkeys(**kw))
 
     def itervalues(d, **kw):
-        return d.itervalues(**kw)
+        return iter(d.itervalues(**kw))
 
     def iteritems(d, **kw):
-        return d.iteritems(**kw)
+        return iter(d.iteritems(**kw))
 
     def iterlists(d, **kw):
-        return d.iterlists(**kw)
+        return iter(d.iterlists(**kw))
 
     viewkeys = operator.methodcaller("viewkeys")
 
@@ -622,9 +600,12 @@ if PY3:
     def u(s):
         return s
     unichr = chr
-    import struct
-    int2byte = struct.Struct(">B").pack
-    del struct
+    if sys.version_info[1] <= 1:
+        def int2byte(i):
+            return bytes((i,))
+    else:
+        # This is about 2x faster than the implementation above on 3.2+
+        int2byte = operator.methodcaller("to_bytes", 1, "big")
     byte2int = operator.itemgetter(0)
     indexbytes = operator.getitem
     iterbytes = iter
@@ -632,12 +613,8 @@ if PY3:
     StringIO = io.StringIO
     BytesIO = io.BytesIO
     _assertCountEqual = "assertCountEqual"
-    if sys.version_info[1] <= 1:
-        _assertRaisesRegex = "assertRaisesRegexp"
-        _assertRegex = "assertRegexpMatches"
-    else:
-        _assertRaisesRegex = "assertRaisesRegex"
-        _assertRegex = "assertRegex"
+    _assertRaisesRegex = "assertRaisesRegex"
+    _assertRegex = "assertRegex"
 else:
     def b(s):
         return s
@@ -803,7 +780,6 @@ def with_metaclass(meta, *bases):
     # metaclass for one level of class instantiation that replaces itself with
     # the actual metaclass.
     class metaclass(meta):
-
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
     return type.__new__(metaclass, 'temporary_class', (), {})
