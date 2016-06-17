@@ -194,7 +194,6 @@ def test_meanimage(fsl_output_type=None):
     clean_directory(testdir, origdir)
     set_output_type(prev_type)
 
-
 @skipif(no_fsl)
 def test_maximage(fsl_output_type=None):
     prev_type = set_output_type(fsl_output_type)
