@@ -2727,6 +2727,217 @@ class TCorrelate(AFNICommand):
     output_spec = AFNICommandOutputSpec
 
 
+class TProjectInputSpec(AFNICommandInputSpec):
+    """
+     -input dataset      = Specifies the input dataset.
+     -prefix ppp         = Specifies the output dataset, as usual.
+    
+     -censor cname       = As in 3dDeconvolve.
+     -CENSORTR clist     = As in 3dDeconvolve.
+     -cenmode mode       = 'mode' specifies how censored time points are treated in
+                           the output dataset:
+                           ++ mode = ZERO ==> put zero values in their place
+                                          ==> output datset is same length as input
+                           ++ mode = KILL ==> remove those time points
+                                          ==> output dataset is shorter than input
+                           ++ mode = NTRP ==> censored values are replaced by interpolated
+                                              neighboring (in time) non-censored values,
+                                              BEFORE any projections, and then the
+                                              analysis proceeds without actual removal
+                                              of any time points -- this feature is to
+                                              keep the Spanish Inquisition happy.
+                           ** The default mode is KILL !!!
+    
+     -concat ccc.1D      = The catenation file, as in 3dDeconvolve, containing the
+                           TR indexes of the start points for each contiguous run
+                           within the input dataset (the first entry should be 0).
+                           ++ Also as in 3dDeconvolve, if the input dataset is
+                              automatically catenated from a collection of datasets,
+                              then the run start indexes are determined directly,
+                              and '-concat' is not needed (and will be ignored).
+                           ++ Each run must have at least 9 time points AFTER
+                              censoring, or the program will not work!
+                           ++ The only use made of this input is in setting up
+                              the bandpass/stopband regressors.
+                           ++ '-ort' and '-dsort' regressors run through all time
+                              points, as read in.  If you want separate projections
+                              in each run, then you must either break these ort files
+                              into appropriate components, OR you must run 3dTproject
+                              for each run separately, using the appropriate pieces
+                              from the ort files via the '{...}' selector for the
+                              1D files and the '[...]' selector for the datasets.
+     -noblock            = Also as in 3dDeconvolve, if you want the program to treat
+                           an auto-catenated dataset as one long run, use this option.
+                           ++ However, '-noblock' will not affect catenation if you use
+                              the '-concat' option.
+    
+     -ort f.1D           = Remove each column in f.1D
+                           ++ Multiple -ort options are allowed.
+                           ++ Each column will have its mean removed.
+     -polort pp          = Remove polynomials up to and including degree pp.
+                           ++ Default value is 2.
+                           ++ It makes no sense to use a value of pp greater than
+                              2, if you are bandpassing out the lower frequencies!
+                           ++ For catenated datasets, each run gets a separate set
+                              set of pp+1 Legendre polynomial regressors.
+     -dsort fset         = Remove the 3D+time time series in dataset fset.
+                           ++ That is, 'fset' contains a different nuisance time
+                              series for each voxel (e.g., from AnatICOR).
+                           ++ Multiple -dsort options are allowed.
+    
+     -passband fbot ftop = Remove all frequencies EXCEPT those in the range
+      *OR* -bandpass       fbot..ftop.
+                           ++ Only one -passband option is allowed.
+     -stopband sbot stop = Remove all frequencies in the range sbot..stop.
+                           ++ More than one -stopband option is allowed.
+                           ++ For example, '-passband 0.01 0.10' is equivalent to
+                              '-stopband 0 0.0099 -stopband 0.1001 9999'
+     -dt dd              = Use time step dd for the frequency calculations,
+     *OR* -TR              rather than the value stored in the dataset header.
+    
+     -mask mset          = Only operate on voxels nonzero in the mset dataset.
+     *OR*                  ++ Use '-mask AUTO' to have the program generate the
+     -automask                mask automatically (or use '-automask')
+                           ++ Voxels outside the mask will be filled with zeros.
+                           ++ If no masking option is given, then all voxels
+                              will be processed.
+    
+     -blur fff           = Blur (inside the mask only) with a filter that has
+                           width (FWHM) of fff millimeters.
+                           ++ Spatial blurring (if done) is after the time
+                              series filtering.
+    
+     -norm               = Normalize each output time series to have sum of
+                           squares = 1. This is the LAST operation.
+    
+     -quiet              = Hide the super-fun and thrilling progress messages.
+    
+     -verb               = The program will save the fixed ort matrix and its
+                           singular values into .1D files, for post-mortems.
+                           It will also print out more progress messages, which
+                           might help with figuring out what's happening when
+                           problems occur.
+    """
+    in_file = File(desc='input file to 3dTproject',
+                   argstr='-input %s',
+                   mandatory=True,
+                   exists=True,
+                   copyfile=False)
+    
+    out_file = File(name_template="%s_tproject", desc='output image file name',
+                    argstr='-prefix %s', name_source="in_file")
+    
+    censor = File(desc='filename of censor .1D time series',
+                  argstr='-censor %s',
+                  exists=True,
+                  copyfile=False)
+    
+    censortr = traits.List(Str(),
+                           argstr='-CENSORTR %s',
+                           desc='list of strings that specify time '\
+                                    'indexes to be removed from the '\
+                                    'analysis.')
+                                        
+    cenmode = traits.Enum(('ZERO', 'KILL', 'NTRP'),
+                          desc='specifies how censored time points are treated '\
+                              'in the output dataset (default = KILL)',
+                          argstr='-cenmode %s')
+    
+    concat = File(desc='The catenation file, as in 3dDeconvolve, containing the '\
+                       'TR indexes of the start points for each contiguous run '\
+                       'within the input dataset (the first entry should be 0).',
+                  argstr='-concat %s.1D',
+                  exists=True,
+                  copyfile=False,
+                  xor=['noblock'])
+    
+    noblock = traits.Bool(desc='if you want the program to treat an auto-'\
+                               'catenated dataset as one long run, use this '\
+                               'option',
+                          argstr='-noblock',
+                          xor=['concat'])
+    
+    ort = traits.List(File(exists=True, copyfile=False),
+                      desc='Remove each column in [f].1D. Multiple are '\
+                           'allowed.',
+                      argstr='-ort %s')
+    
+    polort = traits.Int(desc='Remove polynomials up to and including degree.',
+                        argstr='-polort %d')
+    
+    dsort = traits.List(File(exists=True, copyfile=False),
+                        desc='Remove the 3D+time time series in dataset(s). '\
+                             'Multiple are allowed.',
+                        argstr='-dsort %s')
+    
+    passband = traits.Tuple((traits.Float(), traits.Float()),
+                            desc='Remove all frequencies EXCEPT those in the '\
+                                 'range fbot, ftop',
+                            argstr='-passband %f %f',
+                            xor=['bandpass'])
+    
+    bandpass = traits.Tuple((traits.Float(), traits.Float()),
+                            desc='Remove all frequencies EXCEPT those in the '\
+                                 'range fbot, ftop',
+                            argstr='-bandpass %f %f',
+                            xor=['passband'])
+    
+    stopband = traits.List(traits.Tuple((traits.Float(), traits.Float())),
+                           desc='Remove all frequencies in the range sbot, '\
+                                'stop. Multiple are allowed.',
+                           argstr='-stopband %f %f')
+    
+    dt = traits.Int(desc='Use time step dd for the frequency calculation '\
+                         'rather than the value stored in the dataset header.',
+                    argstr='-dt %d',
+                    xor=['tr'])
+    tr = traits.Int(desc='Use time step dd for the frequency calculation '\
+                         'rather than the value stored in the dataset header.',
+                    argstr='-tr %d',
+                    xor=['dt'])
+    
+    mask = File(desc='Only operate on voxels nonzero in the mset dataset.',
+                argstr='-mask %s',
+                exists=True,
+                copyfile=False,
+                xor=['automask'])
+    
+    automask = traits.Bool(desc='Have the program generate the mask '\
+                                'automatically.',
+                           argstr='-automask',
+                           xor=['mask'])
+    
+    blur = traits.Float(desc='Blur (inside the mask only) with a filter that '\
+                             'has width (FWHM) of fff mm.',
+                        argstr='-blur %f')
+    
+    norm = traits.Bool(desc='Normalize each output time series to have sum of '\
+                            'squares = 1. This is the LAST operation.',
+                       argstr='-norm')
+    
+    quiet = traits.Bool(desc='Hide the super-fun and thrilling progress messages.',
+                        argstr='-quiet')
+    
+    verb = traits.Bool(desc='The program will save the fixed ort matrix and '\
+                            'its singular values into .1D files, for post-'\
+                            'mortems. It will also print out more progress '\
+                            'messages, which might help with figuring out '\
+                            'what\'s happening when problems occur.',
+                       argstr='-verb')
+
+
+class Tproject(AFNICommand):
+    """Detrends various 'nuisance' time series from each voxel in the input 
+    dataset.
+
+    For complete details, see the `3dTproject Documentation.
+    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dTproject.html>`_
+    """
+    _cmd = '3dTproject'
+    input_spec = TProjectInputSpec
+    output_spec = AFNICommandOutputSpec
+
+
 class TShiftInputSpec(AFNICommandInputSpec):
     in_file = File(desc='input file to 3dTShift',
                    argstr='%s',
