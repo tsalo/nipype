@@ -34,6 +34,18 @@ class ICC(BaseInterface):
     input_spec = ICCInputSpec
     output_spec = ICCOutputSpec
 
+    references_ = [{'entry': BibTeX('@article{ShroutFleiss1979,'
+                                    'title = {Intraclass Correlations: Uses in Assessing Rater Reliability},'
+                                    'volume = {86},'
+                                    'number = {2},'
+                                    'journal = {Psychological Bulletin},'
+                                    'author = {P.E. Shrout & J.L. Fleiss},'
+                                    'year = {1979},'
+                                    'pages = {420-428},'
+                                    '}'),
+                    'tags': ['method'],
+                    }]
+
     def _run_interface(self, runtime):
         maskdata = nb.load(self.inputs.mask).get_data()
         maskdata = np.logical_not(np.logical_or(maskdata == 0, np.isnan(maskdata)))

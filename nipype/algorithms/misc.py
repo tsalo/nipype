@@ -74,6 +74,22 @@ class PickAtlas(BaseInterface):
     input_spec = PickAtlasInputSpec
     output_spec = PickAtlasOutputSpec
 
+    references_ = [{'entry': BibTeX('@article{MaldjianLaurientiKraftBurdette2003,'
+                                    'author={J.A. Maldjian, P.J. Laurienti, '
+                                    'R.A. Kraft, & J.H. Burdette},'
+                                    'title={An automated method for neuroanatomic '
+                                    'and cytoarchitectonic atlas-based interrogation '
+                                    'of fMRI data sets Neuroimage},'
+                                    'journal={Neuroimage},'
+                                    'volume={19},'
+                                    'number={3},'
+                                    'pages={1233-1239},'
+                                    'year={2003},'
+                                    '}'),
+                    'tags': ['implementation'],
+                    },
+                   ]
+
     def _run_interface(self, runtime):
         nim = self._get_brodmann_area()
         nb.save(nim, self._gen_output_filename())
@@ -915,8 +931,7 @@ class AddNoiseOutputSpec(TraitedSpec):
 
 class AddNoise(BaseInterface):
     """
-    Corrupts with noise the input image
-
+    Corrupts the input image with noise.
 
     Example
     -------

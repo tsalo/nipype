@@ -62,13 +62,14 @@ class WarpPoints(TVTKBaseInterface):
     ``warp`` file. FSL interfaces are compatible, for instance any
     field computed with :class:`nipype.interfaces.fsl.utils.ConvertWarp`.
 
-    Example::
+    Example
+    ========
 
-        from nipype.algorithms.mesh import WarpPoints
-        wp = WarpPoints()
-        wp.inputs.points = 'surf1.vtk'
-        wp.inputs.warp = 'warpfield.nii'
-        res = wp.run()
+    >>> from nipype.algorithms.mesh import WarpPoints
+    >>> wp = WarpPoints()
+    >>> wp.inputs.points = 'surf1.vtk'
+    >>> wp.inputs.warp = 'warpfield.nii'
+    >>> res = wp.run()  # doctest: +SKIP
 
     """
     input_spec = WarpPointsInputSpec

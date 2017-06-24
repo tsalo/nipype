@@ -273,6 +273,45 @@ class Overlap(BaseInterface):
     input_spec = OverlapInputSpec
     output_spec = OverlapOutputSpec
 
+    references_ = [{'entry': BibTeX('@article{Jaccard1912,'
+                                    'author={P. Jaccard},'
+                                    'title={The distribution of the flora in '
+                                    'the alpine zone},'
+                                    'journal={New phytologist},'
+                                    'volume={11},'
+                                    'number={2},'
+                                    'pages={37-50},'
+                                    'year={1912},'
+                                    '}'),
+                    'tags': ['method'],
+                    },
+                   {'entry': BibTeX('@article{Dice1945,'
+                                    'author={L.R. Dice},'
+                                    'title={Measures of the amount of ecologic '
+                                    'association between species},'
+                                    'journal={Ecology},'
+                                    'volume={26},'
+                                    'number={3},'
+                                    'pages={297-302},'
+                                    'year={1945},'
+                                    '}'),
+                    'tags': ['method'],
+                    },
+                   {'entry': BibTeX('@article{Sørensen1948,'
+                                    'author={T. Sørensen},'
+                                    'title={A method of establishing groups of '
+                                    'equal amplitude in plant sociology based '
+                                    'on similarity of species and its '
+                                    'application to analyses of the vegetation '
+                                    'on Danish commons},'
+                                    'journal={Biologiske Skrifter},'
+                                    'volume={5},'
+                                    'pages={1-34},'
+                                    'year={1948},'
+                                    '}'),
+                    'tags': ['method'],
+                    }]
+
     def _bool_vec_dissimilarity(self, booldata1, booldata2, method):
         methods = {'dice': dice, 'jaccard': jaccard}
         if not (np.any(booldata1) or np.any(booldata2)):
@@ -406,6 +445,21 @@ class FuzzyOverlap(BaseInterface):
 
     input_spec = FuzzyOverlapInputSpec
     output_spec = FuzzyOverlapOutputSpec
+
+    references_ = [{'entry': BibTeX('@article{CrumCamaraHill2006,'
+                                    'author={W.R. Crum, O. Camara, & D.L. Hill},'
+                                    'title={Generalized overlap measures for '
+                                    'evaluation and validation in medical '
+                                    'image analysis},'
+                                    'journal={IEEE Trans. Med. Ima.},'
+                                    'volume={25},'
+                                    'number={11},'
+                                    'pages={1451-1461},'
+                                    'year={2006},'
+                                    '}'),
+                    'tags': ['method'],
+                    },
+                   ]
 
     def _run_interface(self, runtime):
         ncomp = len(self.inputs.in_ref)
