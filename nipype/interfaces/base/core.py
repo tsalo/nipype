@@ -16,7 +16,9 @@ import shlex
 import simplejson as json
 from traits.trait_errors import TraitError
 
-from ... import config, logging, LooseVersion
+from looseversion import LooseVersion
+
+from ... import config, logging
 from ...utils.provenance import write_provenance
 from ...utils.misc import str2bool
 from ...utils.filemanip import (
@@ -389,7 +391,6 @@ class BaseInterface(Interface):
         self._check_version_requirements(self.inputs)
 
         with rtc(self, cwd=cwd, redirect_x=self._redirect_x) as runtime:
-
             # Grab inputs now, as they should not change during execution
             inputs = self.inputs.get_traitsfree()
             outputs = None

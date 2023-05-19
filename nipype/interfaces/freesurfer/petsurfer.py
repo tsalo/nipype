@@ -24,7 +24,6 @@ iflogger = logging.getLogger("nipype.interface")
 
 
 class GTMSegInputSpec(FSTraitedSpec):
-
     subject_id = traits.String(argstr="--s %s", desc="subject id", mandatory=True)
 
     xcerseg = traits.Bool(
@@ -136,7 +135,6 @@ class GTMSeg(FSCommand):
 
 
 class GTMPVCInputSpec(FSTraitedSpec):
-
     in_file = File(
         exists=True,
         argstr="--i %s",
@@ -422,7 +420,6 @@ class GTMPVCInputSpec(FSTraitedSpec):
 
 
 class GTMPVCOutputSpec(TraitedSpec):
-
     pvc_dir = Directory(desc="output directory")
     ref_file = File(desc="Reference TAC in .dat")
     hb_nifti = File(desc="High-binding TAC in nifti")
@@ -560,7 +557,7 @@ class GTMPVC(FSCommand):
             outputs["rbv"] = os.path.join(pvcdir, "rbv.nii.gz")
             outputs["reg_rbvpet2anat"] = os.path.join(pvcdir, "aux", "rbv2anat.lta")
             outputs["reg_anat2rbvpet"] = os.path.join(pvcdir, "aux", "anat2rbv.lta")
-        if self.inputs.opt:
+        if self.inputs.optimization_schema:
             outputs["opt_params"] = os.path.join(pvcdir, "aux", "opt.params.dat")
 
         return outputs

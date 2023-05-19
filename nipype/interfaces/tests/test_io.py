@@ -571,7 +571,6 @@ def test_freesurfersource_incorrectdir():
 
 
 def test_jsonsink_input():
-
     ds = nio.JSONFileSink()
     assert ds.inputs._outputs == {}
 
@@ -708,10 +707,10 @@ def test_SSHDataGrabber(tmpdir):
 
 
 def test_ExportFile(tmp_path):
-    testin = tmp_path / "in.txt"
-    testin.write_text("test string", encoding='utf-8')
+    test_in = tmp_path / "in.txt"
+    test_in.write_text("test string", encoding='utf-8')
     i = nio.ExportFile()
-    i.inputs.in_file = str(testin)
+    i.inputs.in_file = str(test_in)
     i.inputs.out_file = str(tmp_path / "out.tsv")
     i.inputs.check_extension = True
     with pytest.raises(RuntimeError):
